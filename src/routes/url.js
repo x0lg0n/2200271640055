@@ -6,27 +6,55 @@ const router = express.Router();
 
 // Welcome route
 router.get('/', (req, res) => {
-    res.send('Welcome to the URL Shortener API! Use POST /api/shorten to create a short URL.');
+    res.send('Welcome to the URL Shortener API!');
 });
 
 // Create short URL
 router.post('/shorturls', async (req, res) => {
     try {
-        const { originalUrl, validity, shortcode } = req.body;
+        const { originalUrl, validity: expiresAt, shortCode: customShortCode } = req.body;
         
+        // Validate originalUrl
+        if (!originalUrl) {
+            return res.status(400).json({ error: 'Original URL is required' });
+        }
+
+        try {
+            new URL(originalUrl);
+        } catch (err) {
+            return res.status(400).json({ error: 'Invalid URL format' });
+        }
+
+        // check if the url is expired or not 
+        if (expiresAt && new Date(expiresAt) <= new Date()) {
+            return res.status(400).json({ error: 'Expiration date must be in the future' });
+        }
+
+        // If custom shortCode is provided, check if it's already taken
+        if (customShortCode) {
+            const existingCustomCode = await Url.findOne({ shortCode: customShortCode });
+            if (existingCustomCode) {
+                return res.status(409).json({ 
+                    error: 'Custom short code is already in use',
+                    suggestion: nanoid(7) // Provide a suggested alternative
+                });
+            }
+        }
+
         // Check if URL already exists
         const existingUrl = await Url.findOne({ originalUrl });
         if (existingUrl) {
             return res.json(existingUrl);
         }
 
-        // Create new short URL
-        const urlId = nanoid(7);
-        const shortUrl = `${config.baseUrl}/${urlId}`;
+        // Generate or use custom short code
+        const shortCode = customShortCode || nanoid(7);
         
         const url = new Url({
-            shortUrl,
-            expiry,
+            originalUrl,
+            shortCode,
+            expiresAt: expiry ? new Date(expiry) : undefined,
+            isActive: true,
             createdAt: new Date(),
         });
 
@@ -79,7 +107,7 @@ router.get('/:shortCode', async (req, res) => {
 });
 
 // Get detailed URL statistics
-router.get('/stats/:shortCode', async (req, res) => {
+router.get('/shorturls/:shortCode', async (req, res) => {
     try {
         const { shortCode } = req.params;
         const url = await Url.findOne({ shortCode });

@@ -8,6 +8,7 @@ const app = express();
 
 // Middleware
 app.use(bodyParser.json());
+app.use()
 
 // Connect to MongoDB
 mongoose.connect(config.mongoUri)

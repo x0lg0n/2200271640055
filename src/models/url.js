@@ -41,9 +41,9 @@ const urlSchema = new mongoose.Schema({
             message: 'Please enter a valid URL'
         }
     },
+    
     shortCode: {
         type: String,
-        required: true,
         unique: true,
         index: true
     },
@@ -63,7 +63,7 @@ const urlSchema = new mongoose.Schema({
     },
     expiresAt: {
         type: Date,
-        default: () => new Date(+new Date() + 30*24*60*60*1000) // 30 days from creation
+        default: () => new Date(+new Date() + 30*60*1000) // 30 minutes from creation
     }
 }, {
     timestamps: true    // Automatically add updatedAt field
