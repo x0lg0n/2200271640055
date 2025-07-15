@@ -2,3 +2,7 @@ node_modules/
 dist/
 build/
 info.json
+.env
+pnpm-lock.yaml
+.vscode/
+.qodo
